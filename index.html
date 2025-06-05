@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Formar triángulos</title>
   <style>
     body {
@@ -16,31 +16,27 @@
       justify-content: center;
       height: 100vh;
     }
-
     h1 {
       color: #333;
       margin-bottom: 10px;
       font-size: 32px;
     }
-
     #score {
       font-size: 20px;
       margin-bottom: 10px;
       color: #444;
     }
-
     #game-board {
-  position: relative;
-  width: 90vw;
-  max-width: 360px;
-  height: 90vw;
-  max-height: 360px;
-  border: 3px solid #333;
-  background-color: white;
-  border-radius: 10px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
-}
-
+      position: relative;
+      width: 90vw;
+      max-width: 360px;
+      height: 90vw;
+      max-height: 360px;
+      background-color: white;
+      border: 3px solid #333;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
     .dot-wrapper {
       position: absolute;
       width: 30px;
@@ -48,7 +44,6 @@
       transform: translate(-10px, -10px);
       cursor: pointer;
     }
-
     .dot {
       width: 10px;
       height: 10px;
@@ -59,21 +54,18 @@
       left: 10px;
       pointer-events: none;
     }
-
     .line {
       position: absolute;
       background-color: red;
       height: 2px;
       transform-origin: 0 0;
     }
-
     .triangle-marker {
       position: absolute;
       font-size: 14px;
       font-weight: bold;
       pointer-events: none;
     }
-
     #controls {
       margin-top: 20px;
       display: flex;
@@ -81,7 +73,6 @@
       flex-wrap: wrap;
       justify-content: center;
     }
-
     button, select {
       padding: 10px 20px;
       font-size: 16px;
@@ -92,16 +83,13 @@
       color: white;
       transition: background 0.3s;
     }
-
     button:hover, select:hover {
       background-color: #666;
     }
-
     #play-again {
       display: none;
       background-color: #007bff;
     }
-
     #play-again:hover {
       background-color: #0056b3;
     }
@@ -119,25 +107,23 @@
     </select>
     <button id="play-again">Jugar de nuevo</button>
   </div>
-
   <script>
-    const boardSize = 500;
+    let boardSize;
+    let board = [], lines = {}, turn = 'red';
+    let score = { red: 0, blue: 0 };
+    let selectedDot = null, gameOver = false;
+    let gameMode = '2p';
     const dotSize = 10;
     const minDistance = 50;
-
-    let board = [];
-    let lines = {};
-    let turn = 'red';
-    let score = { red: 0, blue: 0 };
-    let selectedDot = null;
-    let gameMode = '2p';
-    let gameOver = false;
-
     const gameBoard = document.getElementById('game-board');
     const scoreDisplay = document.getElementById('score');
     const resetButton = document.getElementById('reset-button');
     const playAgainButton = document.getElementById('play-again');
     const gameModeSelect = document.getElementById('game-mode');
+
+    function updateBoardSize() {
+      boardSize = gameBoard.clientWidth;
+    }
 
     function generateRandomPoints(count) {
       const points = [];
@@ -158,13 +144,10 @@
         wrapper.className = 'dot-wrapper';
         wrapper.style.left = `${board[i].x}px`;
         wrapper.style.top = `${board[i].y}px`;
-
         const dot = document.createElement('div');
         dot.className = 'dot';
-
         wrapper.appendChild(dot);
         gameBoard.appendChild(wrapper);
-
         board[i].id = `p${i}`;
         board[i].element = wrapper;
       }
@@ -173,19 +156,14 @@
     function drawLine(pointA, pointB) {
       const lineId = `${pointA.id}-${pointB.id}`;
       const reverseId = `${pointB.id}-${pointA.id}`;
-      if (lines[lineId] || lines[reverseId]) return;
-      if (intersectsAnyExistingLine(pointA, pointB)) return;
-
+      if (lines[lineId] || lines[reverseId] || intersectsAnyExistingLine(pointA, pointB)) return;
       const x1 = pointA.x + dotSize / 2;
       const y1 = pointA.y + dotSize / 2;
       const x2 = pointB.x + dotSize / 2;
       const y2 = pointB.y + dotSize / 2;
-
-      const dx = x2 - x1;
-      const dy = y2 - y1;
+      const dx = x2 - x1, dy = y2 - y1;
       const distance = Math.hypot(dx, dy);
       const angle = Math.atan2(dy, dx) * (180 / Math.PI);
-
       const line = document.createElement('div');
       line.className = 'line';
       line.style.backgroundColor = turn;
@@ -193,32 +171,20 @@
       line.style.left = `${x1}px`;
       line.style.top = `${y1}px`;
       line.style.transform = `rotate(${angle}deg)`;
-
       gameBoard.appendChild(line);
       lines[lineId] = { a: pointA, b: pointB };
-
       checkTriangles(turn);
       if (gameOver) return;
-
       if (checkGameOverByMoves()) return;
-
-      if (gameMode === 'vsCPU' && turn === 'red') {
-        turn = 'blue';
-        setTimeout(cpuMove, 300);
-      } else {
-        turn = turn === 'red' ? 'blue' : 'red';
-      }
+      turn = gameMode === 'vsCPU' && turn === 'red' ? 'blue' : (turn === 'red' ? 'blue' : 'red');
+      if (gameMode === 'vsCPU' && turn === 'blue') setTimeout(cpuMove, 300);
     }
 
     function intersectsAnyExistingLine(p1, p2) {
-      const x1 = p1.x, y1 = p1.y, x2 = p2.x, y2 = p2.y;
       for (let key in lines) {
         const { a, b } = lines[key];
-        if (
-          a.id === p1.id || a.id === p2.id ||
-          b.id === p1.id || b.id === p2.id
-        ) continue;
-        if (segmentsIntersect(x1, y1, x2, y2, a.x, a.y, b.x, b.y)) return true;
+        if ([a.id, b.id].includes(p1.id) || [a.id, b.id].includes(p2.id)) continue;
+        if (segmentsIntersect(p1.x, p1.y, p2.x, p2.y, a.x, a.y, b.x, b.y)) return true;
       }
       return false;
     }
@@ -227,10 +193,7 @@
       function ccw(ax, ay, bx, by, cx, cy) {
         return (cy - ay) * (bx - ax) > (by - ay) * (cx - ax);
       }
-      return (
-        ccw(x1, y1, x3, y3, x4, y4) !== ccw(x2, y2, x3, y3, x4, y4) &&
-        ccw(x1, y1, x2, y2, x3, y3) !== ccw(x1, y1, x2, y2, x4, y4)
-      );
+      return ccw(x1, y1, x3, y3, x4, y4) !== ccw(x2, y2, x3, y3, x4, y4) && ccw(x1, y1, x2, y2, x3, y3) !== ccw(x1, y1, x2, y2, x4, y4);
     }
 
     function checkTriangles(currentTurn) {
@@ -238,8 +201,7 @@
         for (let j = i + 1; j < board.length; j++) {
           for (let k = j + 1; k < board.length; k++) {
             const a = board[i], b = board[j], c = board[k];
-            const ids = [[a,b], [b,c], [c,a]].map(([p1,p2]) => [`${p1.id}-${p2.id}`, `${p2.id}-${p1.id}`]);
-
+            const ids = [[a, b], [b, c], [c, a]].map(([p1, p2]) => [`${p1.id}-${p2.id}`, `${p2.id}-${p1.id}`]);
             if (ids.every(([id1, id2]) => lines[id1] || lines[id2])) {
               const triangleId = [a.id, b.id, c.id].sort().join(',');
               if (!document.querySelector(`.triangle-marker[data-cell="${triangleId}"]`)) {
@@ -277,8 +239,7 @@
       for (let i = 0; i < board.length; i++) {
         for (let j = i + 1; j < board.length; j++) {
           const p1 = board[i], p2 = board[j];
-          const id1 = `${p1.id}-${p2.id}`;
-          const id2 = `${p2.id}-${p1.id}`;
+          const id1 = `${p1.id}-${p2.id}`, id2 = `${p2.id}-${p1.id}`;
           if (!lines[id1] && !lines[id2] && !intersectsAnyExistingLine(p1, p2)) {
             return false;
           }
@@ -300,6 +261,7 @@
       gameOver = false;
       playAgainButton.style.display = 'none';
       scoreDisplay.textContent = `Rojo: 0 | Azul: 0`;
+      updateBoardSize();
       initBoard();
     }
 
@@ -309,8 +271,7 @@
       for (let i = 0; i < board.length; i++) {
         for (let j = i + 1; j < board.length; j++) {
           const p1 = board[i], p2 = board[j];
-          const id1 = `${p1.id}-${p2.id}`;
-          const id2 = `${p2.id}-${p1.id}`;
+          const id1 = `${p1.id}-${p2.id}`, id2 = `${p2.id}-${p1.id}`;
           if (!lines[id1] && !lines[id2] && !intersectsAnyExistingLine(p1, p2)) {
             available.push([p1, p2]);
           }
@@ -323,14 +284,10 @@
     }
 
     gameBoard.addEventListener('click', (e) => {
-      if (gameOver) return;
-      if (gameMode === 'vsCPU' && turn === 'blue') return;
-
+      if (gameOver || (gameMode === 'vsCPU' && turn === 'blue')) return;
       const wrapper = e.target.closest('.dot-wrapper');
       if (!wrapper) return;
-
       const clicked = board.find(p => p.element === wrapper);
-
       if (selectedDot) {
         const [prev] = selectedDot;
         if (prev !== clicked) {
@@ -344,13 +301,12 @@
 
     resetButton.addEventListener('click', resetGame);
     playAgainButton.addEventListener('click', resetGame);
-
     gameModeSelect.addEventListener('change', () => {
       gameMode = gameModeSelect.value;
       resetGame();
     });
 
-    initBoard();
+    window.addEventListener('load', resetGame);
   </script>
 </body>
 </html>
