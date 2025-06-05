@@ -99,20 +99,27 @@
   <h1>Formar triángulos</h1>
   <div id="score">Rojo: 0 | Azul: 0</div>
   <div id="game-board"></div>
-  <div id="controls">
-    <button id="reset-button">Reset</button>
-    <select id="game-mode">
-      <option value="2p">2 Jugadores</option>
-      <option value="vsCPU">Contra el Ordenador</option>
-    </select>
-    <button id="play-again">Jugar de nuevo</button>
+      <div id="controls">
+  <select id="score-limit">
+    <option value="10">A 10 puntos</option>
+    <option value="15" selected>A 15 puntos</option>
+    <option value="20">A 20 puntos</option>
+  </select>
+  <button id="reset-button">Reset</button>
+  <select id="game-mode">
+    <option value="2p">2 Jugadores</option>
+    <option value="vsCPU">Contra el Ordenador</option>
+  </select>
+  <button id="play-again">Jugar de nuevo</button>
+</div>
   </div>
   <script>
     let boardSize;
     let board = [], lines = {}, turn = 'red';
     let score = { red: 0, blue: 0 };
     let selectedDot = null, gameOver = false;
-    let gameMode = '2p';
+        let scoreLimit = 15;
+let gameMode = '2p';
     const dotSize = 10;
     const minDistance = 50;
     const gameBoard = document.getElementById('game-board');
@@ -228,8 +235,8 @@
     function updateScore(playerColor) {
       score[playerColor]++;
       scoreDisplay.textContent = `Rojo: ${score.red} | Azul: ${score.blue}`;
-      if (score[playerColor] >= 20) {
-        alert(`¡${playerColor === 'red' ? 'Rojo' : 'Azul'} gana con 20 puntos!`);
+      if (score[playerColor] >= scoreLimit) {
+        alert(`¡${playerColor === 'red' ? 'Rojo' : 'Azul'} gana con ${scoreLimit} puntos!`);
         gameOver = true;
         playAgainButton.style.display = 'inline-block';
       }
@@ -303,6 +310,11 @@
     playAgainButton.addEventListener('click', resetGame);
     gameModeSelect.addEventListener('change', () => {
       gameMode = gameModeSelect.value;
+      resetGame();
+    });
+
+    document.getElementById('score-limit').addEventListener('change', (e) => {
+      scoreLimit = parseInt(e.target.value);
       resetGame();
     });
 
